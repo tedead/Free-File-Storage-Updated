@@ -1,8 +1,38 @@
 # Free File Storage
 
+[![PHP](https://img.shields.io/badge/PHP-8.3%2B-777BB4?logo=php&logoColor=white)](https://www.php.net/)
+[![SQL Server](https://img.shields.io/badge/SQL%20Server-2016%2B-CC2927?logo=microsoftsqlserver&logoColor=white)](https://www.microsoft.com/en-us/sql-server)
+[![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)](#layout)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
+
 A small PHP file-storage site, originally written against MySQL with mysqli, now
 running on Microsoft SQL Server through PDO with all data access behind stored
 procedures.
+
+Per-user file storage with upload, download and delete. No framework and no
+Composer packages — the only requirements are PHP, the Microsoft SQL Server
+driver, and a database.
+
+## Screenshots
+
+![The dashboard: upload form and the signed-in user's files](docs/screenshots/dashboard.png)
+
+<table>
+<tr>
+<td width="50%"><img alt="The same dashboard in dark mode" src="docs/screenshots/dashboard-dark.png"></td>
+<td width="50%"><img alt="The sign-in page" src="docs/screenshots/sign-in.png"></td>
+</tr>
+<tr>
+<td align="center"><em>Dark mode, from <code>prefers-color-scheme</code></em></td>
+<td align="center"><em>Sign in</em></td>
+</tr>
+</table>
+
+<p align="center">
+  <img alt="The dashboard on a narrow viewport" src="docs/screenshots/mobile.png" width="330">
+  <br><em>At 420px: the layout stacks and the file table scrolls inside its own
+  container, so a long filename never widens the page.</em>
+</p>
 
 ---
 
