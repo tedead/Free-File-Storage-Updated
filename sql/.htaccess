@@ -1,0 +1,10 @@
+# Schema, procedure bodies and the security model are not public documents.
+# Apache serves .sql as plain text by default, so without this the whole
+# database design is readable by anyone who can reach the site.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

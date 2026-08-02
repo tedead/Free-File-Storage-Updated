@@ -1,0 +1,39 @@
+# Free File Storage - root access rules.
+#
+# Only the page scripts should be reachable. Everything below is either a
+# support file the browser never needs, or a file whose contents would help an
+# attacker.
+
+# Config holds the database password. Requesting it today returns an empty body,
+# because PHP executes the file and its top-level `return` prints nothing -- but
+# that safety depends entirely on the PHP handler being active. If PHP is ever
+# disabled, misconfigured, or the file is renamed to .bak by an editor, Apache
+# falls back to serving it as plain text and the password goes with it.
+<FilesMatch "^config.*\.php$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Editor and tooling leftovers that would be served as source.
+<FilesMatch "\.(sql|md|bak|bak-[0-9-]+|orig|save|swp|old|dist|log|ini)$|~$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Directory listings reveal the file inventory even when each file is protected.
+Options -Indexes
+
+# Do not advertise the PHP version in response headers.
+<IfModule mod_headers.c>
+    Header unset X-Powered-By
+</IfModule>

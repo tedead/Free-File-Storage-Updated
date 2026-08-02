@@ -1,0 +1,12 @@
+# Diagnostics print the database host, database name and login name.
+# They are command-line tools; nothing here should ever be reachable over HTTP.
+#
+# check-db.php also refuses to run unless PHP_SAPI === 'cli', so blocking it
+# here is the second of two independent defences rather than the only one.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

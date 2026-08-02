@@ -1,0 +1,11 @@
+# Uploaded content is never served directly. All downloads go through download.php,
+# which checks ownership and forces an attachment disposition.
+# This is defence in depth: ideally FFS_STORAGE_PATH points somewhere outside the webroot.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
+php_flag engine off

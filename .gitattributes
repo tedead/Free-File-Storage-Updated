@@ -1,0 +1,34 @@
+# Normalise line endings so a clone on Linux or macOS does not show every file
+# as modified. Text files are stored LF in the repository and checked out with
+# the platform's native ending.
+* text=auto
+
+# Always LF, regardless of platform: shell scripts break with CRLF, and .htaccess
+# is read by Apache which is fussier than it looks.
+*.sh        text eol=lf
+.htaccess   text eol=lf
+
+# Always CRLF: these are read by Windows tooling that expects it.
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+
+# Explicit, so nothing is guessed wrong.
+*.php       text
+*.sql       text
+*.css       text
+*.js        text
+*.md        text
+*.json      text
+*.xml       text
+*.config    text
+
+# Binary - never touch these.
+*.png       binary
+*.jpg       binary
+*.gif       binary
+*.ico       binary
+*.zip       binary
+*.pdf       binary
+
+# Keep generated or vendored paths out of language statistics and diffs.
+legacy-mysql/**  linguist-vendored

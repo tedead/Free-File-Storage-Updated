@@ -1,0 +1,11 @@
+# Local configuration - contains the database password. Never commit this.
+config.local.php
+
+# Uploaded content
+/User Directories/*/
+
+# Keep the deny rules that protect the storage directory
+!/User Directories/.htaccess
+!/User Directories/web.config
+
+test1.txt

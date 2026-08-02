@@ -1,0 +1,524 @@
+/* =============================================================================
+   Free File Storage
+
+   Replaces the original 33 lines of #id rules that positioned form fields by
+   nudging each one with `position: relative; left: 18px` to fake alignment --
+   which held only at one font size and one window width. Labels and inputs are
+   laid out with grid and flexbox here, so they line up on their own.
+   ============================================================================= */
+
+/* ---------- Tokens ------------------------------------------------------- */
+
+:root {
+    --bg:            #f4f6fb;
+    --surface:       #ffffff;
+    --surface-alt:   #f8fafc;
+    --border:        #e2e8f0;
+    --border-strong: #cbd5e1;
+
+    --text:          #0f172a;
+    --text-muted:    #64748b;
+    --text-faint:    #94a3b8;
+
+    --accent:        #2563eb;
+    --accent-hover:  #1d4ed8;
+    --accent-soft:   #eff6ff;
+    --on-accent:     #ffffff;
+
+    --success:       #059669;
+    --success-soft:  #ecfdf5;
+    --danger:        #dc2626;
+    --danger-hover:  #b91c1c;
+    --danger-soft:   #fef2f2;
+    --info:          #0284c7;
+    --info-soft:     #f0f9ff;
+
+    --radius:        10px;
+    --radius-sm:     6px;
+    --shadow:        0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.15);
+    --shadow-sm:     0 1px 2px rgb(15 23 42 / 0.06);
+
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Code", "Segoe UI Mono", Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg:            #0b1120;
+        --surface:       #131c31;
+        --surface-alt:   #1a2440;
+        --border:        #263250;
+        --border-strong: #35456b;
+
+        --text:          #e8edf7;
+        --text-muted:    #94a3b8;
+        --text-faint:    #64748b;
+
+        --accent:        #60a5fa;
+        --accent-hover:  #93c5fd;
+        --accent-soft:   #17233f;
+        --on-accent:     #0b1120;
+
+        --success:       #34d399;
+        --success-soft:  #10241f;
+        --danger:        #f87171;
+        --danger-hover:  #fca5a5;
+        --danger-soft:   #2a1618;
+        --info:          #38bdf8;
+        --info-soft:     #0e2233;
+
+        --shadow:        0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+        --shadow-sm:     0 1px 2px rgb(0 0 0 / 0.4);
+    }
+}
+
+/* ---------- Base --------------------------------------------------------- */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--text);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { line-height: 1.25; margin: 0 0 0.5rem; font-weight: 600; }
+h1 { font-size: 1.6rem; letter-spacing: -0.015em; }
+h2 { font-size: 1.2rem; }
+p  { margin: 0 0 1rem; }
+p:last-child { margin-bottom: 0; }
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:hover { color: var(--accent-hover); }
+
+.wrap {
+    width: 100%;
+    max-width: 68rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+}
+
+main.wrap { flex: 1; padding-block: 2rem 3rem; }
+
+/* Visible only when focused, for keyboard users. */
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    padding: 0.6rem 1rem;
+    background: var(--accent);
+    color: var(--on-accent);
+    border-radius: 0 0 var(--radius-sm) 0;
+    z-index: 10;
+}
+.skip-link:focus { left: 0; }
+
+/* A consistent, always-visible focus ring. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+/* ---------- Header / footer ---------------------------------------------- */
+
+.site-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.site-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 3.75rem;
+    flex-wrap: wrap;
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--text);
+    text-decoration: none;
+}
+.brand__mark { color: var(--accent); font-size: 1.15rem; }
+
+.site-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    font-size: 0.9rem;
+}
+.site-nav__user { color: var(--text-muted); }
+.site-nav__user strong { color: var(--text); font-weight: 600; }
+
+.inline-form { display: inline; margin: 0; }
+
+.site-footer {
+    border-top: 1px solid var(--border);
+    padding-block: 1.25rem;
+    font-size: 0.85rem;
+    color: var(--text-faint);
+    background: var(--surface);
+}
+
+/* ---------- Cards -------------------------------------------------------- */
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.75rem;
+}
+
+.card + .card { margin-top: 1.5rem; }
+
+.card__header { margin-bottom: 1.25rem; }
+.card__header p { color: var(--text-muted); font-size: 0.92rem; margin: 0.25rem 0 0; }
+
+/* Centred single-column pages: sign in, register, sign out. */
+.card--auth {
+    max-width: 26rem;
+    margin-inline: auto;
+    margin-top: 2rem;
+}
+.card--auth.card--wide { max-width: 34rem; }
+
+/* ---------- Forms -------------------------------------------------------- */
+
+.field { margin-bottom: 1.1rem; }
+.field:last-of-type { margin-bottom: 1.5rem; }
+
+.field label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+
+.field__hint {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.3rem;
+    font-weight: 400;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="file"],
+select {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    font: inherit;
+    font-size: 0.95rem;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+input[type="file"] { padding: 0.45rem; cursor: pointer; }
+
+input[type="file"]::file-selector-button {
+    font: inherit;
+    font-size: 0.875rem;
+    margin-right: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--surface-alt);
+    color: var(--text);
+    cursor: pointer;
+}
+input[type="file"]::file-selector-button:hover { background: var(--accent-soft); }
+
+/* Two fields side by side on wide screens, stacked on narrow ones. */
+.field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1rem;
+}
+@media (max-width: 34rem) {
+    .field-row { grid-template-columns: 1fr; }
+}
+
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+.form-actions .spacer { margin-left: auto; }
+
+/* ---------- Buttons ------------------------------------------------------ */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1.1rem;
+    font: inherit;
+    font-size: 0.925rem;
+    font-weight: 550;
+    line-height: 1.2;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--on-accent);
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.btn:hover { background: var(--accent-hover); color: var(--on-accent); }
+
+.btn--block { width: 100%; }
+.btn--sm { padding: 0.35rem 0.7rem; font-size: 0.825rem; }
+
+.btn--secondary {
+    background: var(--surface);
+    border-color: var(--border-strong);
+    color: var(--text);
+}
+.btn--secondary:hover { background: var(--surface-alt); color: var(--text); }
+
+.btn--ghost {
+    background: transparent;
+    border-color: var(--border-strong);
+    color: var(--text-muted);
+}
+.btn--ghost:hover { background: var(--surface-alt); color: var(--text); }
+
+.btn--danger {
+    background: transparent;
+    border-color: transparent;
+    color: var(--danger);
+}
+.btn--danger:hover { background: var(--danger-soft); color: var(--danger-hover); }
+
+/* ---------- Flash messages ----------------------------------------------- */
+
+.flashes { margin-bottom: 1.5rem; display: grid; gap: 0.6rem; }
+
+.flash {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.8rem 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    font-size: 0.92rem;
+}
+
+.flash__icon {
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--on-accent);
+}
+
+.flash--success { background: var(--success-soft); border-color: color-mix(in srgb, var(--success) 30%, transparent); color: var(--success); }
+.flash--success .flash__icon { background: var(--success); }
+
+.flash--error { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 30%, transparent); color: var(--danger); }
+.flash--error .flash__icon { background: var(--danger); }
+
+.flash--info { background: var(--info-soft); border-color: color-mix(in srgb, var(--info) 30%, transparent); color: var(--info); }
+.flash--info .flash__icon { background: var(--info); }
+
+.flash--list { display: block; }
+.flash--list ul { margin: 0; padding-left: 1.25rem; }
+
+/* Takes the free space, pushing the close button to the right edge. */
+.flash__text { flex: 1; }
+
+/* Fade and lift slightly on the way out. */
+.flash { transition: opacity 0.25s ease, transform 0.25s ease; }
+
+.flash.is-dismissing {
+    opacity: 0;
+    transform: translateY(-0.35rem);
+    pointer-events: none;
+}
+
+.flash__close {
+    flex: none;
+    align-self: flex-start;
+    margin: -0.2rem -0.35rem -0.2rem 0;
+    padding: 0.1rem 0.4rem;
+    font: inherit;
+    font-size: 1.2rem;
+    line-height: 1.1;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    /* currentColor, so it matches whichever flash variant it sits in. */
+    color: inherit;
+    opacity: 0.55;
+    cursor: pointer;
+    transition: opacity 0.15s, background 0.15s;
+}
+
+.flash__close:hover,
+.flash__close:focus-visible {
+    opacity: 1;
+    background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+/* The button does nothing until site.js binds it, so it stays out of the layout
+   and out of the accessibility tree until JavaScript has run. A button that
+   silently does nothing is worse than no button at all. */
+.flash__close { display: none; }
+:root.js .flash__close { display: block; }
+
+/* ---------- File table --------------------------------------------------- */
+
+.toolbar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+.toolbar .count { color: var(--text-muted); font-size: 0.9rem; }
+
+/* The table itself scrolls rather than the page, so a long filename cannot
+   push the layout sideways on a phone. */
+.table-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.file-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+
+.file-table th {
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-alt);
+    white-space: nowrap;
+}
+
+.file-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+.file-table tbody tr:last-child td { border-bottom: none; }
+.file-table tbody tr:hover { background: var(--surface-alt); }
+
+.file-name {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 500;
+    /* Long unbroken filenames wrap instead of stretching the column. */
+    word-break: break-word;
+    min-width: 12rem;
+}
+.file-icon { flex: none; font-size: 1.05rem; opacity: 0.75; }
+
+.col-size, .col-date { white-space: nowrap; color: var(--text-muted); }
+.col-actions { text-align: right; white-space: nowrap; }
+.col-actions form { display: inline; }
+.col-actions .btn + form .btn { margin-left: 0.25rem; }
+
+.pill {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    white-space: nowrap;
+}
+
+.type-hint {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-faint);
+    font-family: var(--mono);
+}
+
+/* ---------- Empty state -------------------------------------------------- */
+
+.empty {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--text-muted);
+}
+.empty__mark { font-size: 2.5rem; opacity: 0.4; display: block; margin-bottom: 0.75rem; }
+.empty h2 { color: var(--text); }
+
+/* ---------- Utilities ---------------------------------------------------- */
+
+.text-muted { color: var(--text-muted); }
+.text-center { text-align: center; }
+.mt-1 { margin-top: 1rem; }
+.mb-0 { margin-bottom: 0; }
+.small { font-size: 0.875rem; }
+
+/* Present to assistive technology, hidden visually. */
+.visually-hidden {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

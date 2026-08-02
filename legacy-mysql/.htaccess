@@ -1,0 +1,10 @@
+# These files are the original MySQL version, kept for reference only.
+# They contain SQL injection and plaintext-password bugs and must never execute.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
+php_flag engine off
