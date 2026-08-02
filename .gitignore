@@ -1,5 +1,9 @@
-# Local configuration - contains the database password. Never commit this.
+# Local configuration - holds the database password. Never commit these.
+# The committed templates are config.local.example.php and .env.example.
 config.local.php
+.env
+.env.*
+!.env.example
 
 # Uploaded content
 /User Directories/*/

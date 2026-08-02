@@ -4,12 +4,28 @@ declare(strict_types=1);
 /**
  * Configuration.
  *
- * Reads from environment variables, with a config.local.php override for
- * development. Nothing secret is hardcoded here -- the original had
- * "userPass" pasted into nine different files, which meant rotating the
- * database password was a find-and-replace across the codebase.
+ * Nothing secret is hardcoded here. The original had "userPass" pasted into
+ * nine different files, so rotating the database password meant a
+ * find-and-replace across the codebase.
  *
- * config.local.php is gitignored. See config.local.example.php.
+ * Values are resolved in this order, later winning over earlier:
+ *
+ *   1. The defaults written below.
+ *   2. A .env file next to this one (see .env.example).
+ *   3. Real environment variables -- SetEnv in Apache, the application settings
+ *      in IIS, or the shell. These beat .env so a deployment can override a
+ *      checked-out file without editing it.
+ *   4. config.local.php, if present. An explicit local override that wins over
+ *      everything.
+ *
+ * Pick one of .env or config.local.php and stay with it; using both just makes
+ * it harder to work out where a value came from.
+ *
+ * Both are gitignored. Neither belongs in source control -- but note that
+ * config.local.php is PHP, so requesting it over HTTP executes it and returns
+ * nothing, whereas a .env is plain text and would be served verbatim if the
+ * deny rules in .htaccess were ever missing. Prefer .env only when it sits
+ * outside the webroot, or when your tooling expects that format.
  */
 
 function config(?string $key = null, mixed $default = null): mixed
@@ -17,6 +33,8 @@ function config(?string $key = null, mixed $default = null): mixed
     static $config = null;
 
     if ($config === null) {
+        load_env_file(__DIR__ . DIRECTORY_SEPARATOR . '.env');
+
         $config = [
             'db' => [
                 'host' => env('FFS_DB_HOST', 'localhost'),
@@ -104,6 +122,74 @@ function config(?string $key = null, mixed $default = null): mixed
     }
 
     return $value;
+}
+
+/**
+ * Load a .env file into the environment.
+ *
+ * Deliberately small: no dependency, and it only does the parts of the dotenv
+ * format that actually earn their keep -- comments, blank lines, KEY=VALUE, and
+ * optional surrounding quotes. There is no variable interpolation, because a
+ * password containing a literal $ would then silently expand to something else.
+ *
+ * An existing real environment variable is never overwritten. That is the usual
+ * dotenv rule and it is what makes a deployment able to override a checked-out
+ * file: the server sets FFS_DB_PASS, and the .env sitting on disk loses.
+ */
+function load_env_file(string $path): void
+{
+    static $seen = [];
+
+    if (isset($seen[$path])) {
+        return;
+    }
+    $seen[$path] = true;
+
+    if (!is_readable($path)) {
+        return;                       // absent is normal, not an error
+    }
+
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        return;
+    }
+
+    foreach ($lines as $line) {
+        $line = trim($line);
+
+        if ($line === '' || str_starts_with($line, '#')) {
+            continue;
+        }
+
+        $split = strpos($line, '=');
+        if ($split === false) {
+            continue;
+        }
+
+        $name  = trim(substr($line, 0, $split));
+        $value = trim(substr($line, $split + 1));
+
+        if ($name === '') {
+            continue;
+        }
+
+        // Strip one matching pair of surrounding quotes, so a value with
+        // trailing spaces or a # can be written as "  hunter2 # not a comment".
+        $len = strlen($value);
+        if ($len >= 2
+            && ($value[0] === '"' || $value[0] === "'")
+            && $value[$len - 1] === $value[0]) {
+            $value = substr($value, 1, -1);
+        }
+
+        // A real environment variable always wins.
+        if (getenv($name) !== false) {
+            continue;
+        }
+
+        putenv($name . '=' . $value);
+        $_ENV[$name] = $value;
+    }
 }
 
 function env(string $name, string $default = ''): string

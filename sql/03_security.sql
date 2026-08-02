@@ -18,13 +18,32 @@
    see the note at the end.
    ============================================================================= */
 
+/* The password is supplied as a sqlcmd variable, so it is never written into
+   this file and cannot be committed by accident:
+
+       sqlcmd -S <server> -E -b -v FFS_APP_PASSWORD="your password here" -i 03_security.sql
+
+   In SQL Server Management Studio, enable SQLCMD Mode (Query menu) first, or
+   uncomment the :setvar line below and delete it again afterwards.
+
+   The value is checked before use, so a forgotten -v fails loudly instead of
+   creating an account with a literal password of "$(FFS_APP_PASSWORD)". */
+
+-- :setvar FFS_APP_PASSWORD "your password here"
+
 USE master;
+GO
+
+IF '$(FFS_APP_PASSWORD)' IN ('', 'CHANGE-ME-before-running')
+BEGIN
+    RAISERROR('Pass the password with:  sqlcmd -v FFS_APP_PASSWORD="..." -i 03_security.sql', 20, 1) WITH LOG;
+END
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.server_principals WHERE name = N'ffs_app')
 BEGIN
     CREATE LOGIN ffs_app
-        WITH PASSWORD     = N'CHANGE-ME-before-running',
+        WITH PASSWORD     = N'$(FFS_APP_PASSWORD)',
              CHECK_POLICY = ON;   -- defers to the Windows password policy
 END
 GO

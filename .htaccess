@@ -19,6 +19,20 @@
     </IfModule>
 </FilesMatch>
 
+# .env is plain text, unlike config.local.php which PHP executes. If this rule
+# is missing or mod_authz_core is unavailable, requesting /.env returns the
+# database password verbatim. This is the reason to keep .env outside the
+# webroot when you can.
+<FilesMatch "^\.env">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
 # Editor and tooling leftovers that would be served as source.
 <FilesMatch "\.(sql|md|bak|bak-[0-9-]+|orig|save|swp|old|dist|log|ini)$|~$">
     <IfModule mod_authz_core.c>
