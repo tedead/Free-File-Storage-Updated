@@ -30,5 +30,5 @@
 *.zip       binary
 *.pdf       binary
 
-# Keep generated or vendored paths out of language statistics and diffs.
-legacy-mysql/**  linguist-vendored
+# Docs and screenshots should not skew the language statistics.
+docs/**  linguist-documentation

@@ -1,17 +1,48 @@
 # Free File Storage
 
 [![PHP](https://img.shields.io/badge/PHP-8.3%2B-777BB4?logo=php&logoColor=white)](https://www.php.net/)
-[![SQL Server](https://img.shields.io/badge/SQL%20Server-2016%2B-CC2927?logo=microsoftsqlserver&logoColor=white)](https://www.microsoft.com/en-us/sql-server)
+[![SQL Server](https://img.shields.io/badge/Microsoft%20SQL%20Server-2016%2B%20required-CC2927?logo=microsoftsqlserver&logoColor=white)](https://www.microsoft.com/en-us/sql-server)
+[![Data access](https://img.shields.io/badge/data%20access-stored%20procedures%20only-CC2927)](sql/02_procedures.sql)
 [![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)](#layout)
 [![License](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
-A small PHP file-storage site, originally written against MySQL with mysqli, now
-running on Microsoft SQL Server through PDO with all data access behind stored
-procedures.
+A small PHP file-storage site: per-user upload, download and delete, with no
+framework and no Composer packages.
 
-Per-user file storage with upload, download and delete. No framework and no
-Composer packages — the only requirements are PHP, the Microsoft SQL Server
-driver, and a database.
+> ### Built for Microsoft SQL Server
+>
+> **This targets SQL Server specifically and will not run on MySQL, MariaDB,
+> PostgreSQL or SQLite without substantial rewriting.** It was originally a
+> MySQL/mysqli application and was ported deliberately, not written to be
+> portable.
+>
+> What ties it to SQL Server:
+>
+> - Every query lives in a **T-SQL stored procedure** (`sql/02_procedures.sql`).
+>   There is no SQL text anywhere in the PHP; it only issues
+>   `{CALL ffs.Something(?, ?)}`.
+> - The security model depends on **SQL Server ownership chaining** — the
+>   application's login is granted `EXECUTE` on the procedure schema and
+>   explicitly denied all access to the tables. Other engines do not have an
+>   equivalent.
+> - The schema uses `UNIQUEIDENTIFIER`, `NVARCHAR`, `DATETIME2` and
+>   `SYSUTCDATETIME()`.
+> - Connections go through **`pdo_sqlsrv`**, Microsoft's driver, not `pdo_mysql`.
+>
+> Porting it elsewhere would mean rewriting all eight procedures, replacing the
+> permission model, and swapping the driver. Doable, but it is a port, not a
+> configuration change.
+
+## Requirements
+
+| | |
+| --- | --- |
+| **Database** | Microsoft SQL Server 2016 or newer. Express, Developer and LocalDB all work (LocalDB has [caveats](#1b-connecting-to-a-sql-server-on-another-machine)). Azure SQL should work but is untested. |
+| **PHP** | 8.1+, tested on 8.3 and 8.4. |
+| **PHP extension** | `pdo_sqlsrv` 5.13+ (5.13 is the first release supporting PHP 8.4). |
+| **ODBC driver** | Microsoft ODBC Driver 17 or 18 for SQL Server. |
+| **Web server** | Anything that runs PHP. Apache and IIS get `.htaccess` / `web.config` deny rules; the PHP built-in server ignores both and is development-only. |
+| **Composer** | Not used. There are no third-party dependencies. |
 
 ## Screenshots
 
@@ -197,11 +228,6 @@ Two connection details that cost time to discover:
 
 ### 4. Before going live
 
-- [ ] **Delete `legacy-mysql/`.** It is the original code, kept only so you can
-      compare. It contains working SQL injection and stores passwords in
-      plaintext. It ships with `.htaccess` and `web.config` deny rules, but the
-      PHP built-in dev server ignores those — I confirmed it serves those files
-      on `php -S`. Under Apache or IIS the rules apply; deleting is certain.
 - [ ] **Move storage outside the webroot.** Set `storage_path` to something like
       `C:\ffs-storage`. The default keeps the original `User Directories`
       location so an existing install still works, and that directory has deny
@@ -263,7 +289,9 @@ assets/site.js           Delete confirmation (progressive enhancement)
 
 tools/check-db.php       Connection diagnostic - run this first when it breaks
 
-legacy-mysql/            Original code, for reference. Delete before deploying.
+(The original MySQL code was removed in a later commit. It is still in this
+repository's history, in the initial commit, if you want to compare against
+what the "What was wrong with the original" section below describes.)
 ```
 
 ---
@@ -668,9 +696,8 @@ guards, registration, login, six injection payloads, hostile uploads, download,
 delete, logout — all as above, plus:
 
 - `.htaccess` deny rules confirmed working (they are silently ignored by the PHP
-  built-in server, so this was the first real test of them): `legacy-mysql/`,
-  `User Directories/`, `sql/`, `tools/`, `config*.php` and directory listings all
-  return **403**.
+  built-in server, so this was the first real test of them): `User Directories/`,
+  `sql/`, `tools/`, `config*.php` and directory listings all return **403**.
 - Six SQL injection payloads — including `x' AND 1=CONVERT(int,@@version)--`,
   which targets SQL Server's error-based disclosure specifically — all rejected,
   with the schema intact afterwards.
